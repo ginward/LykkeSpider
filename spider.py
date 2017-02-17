@@ -27,32 +27,36 @@ SOFTWARE.
 '''
 
 import pandas as pd 
-import scrapy as sp
+from bs4 import BeautifulSoup
+import urllib2
 
 class LykkeSpider():
 
-	def readTxhasid(csv_path):
+	def readTxhasid(self, csv_path):
 		'''
 		The script to read txhasid from csv file 
 		'''
-		print "reading txhasid from cav file ..."
+		print "reading txhasid from csv file ..."
 		df = pd.read_csv(csv_path)
 		txhasidColumn = df['TxHashId']
 		return txhasidColumn.tolist()
 
-	def requestHTML(self):
+	def requestHTML(self, id):
 		'''
-		Crawl the Fee information from Lykke
+		Crawl the fee information from Lykke
 		'''
-		sp.Request(url="https://www.coinprism.info/tx/eae0316801df957138e97ab8ff7524d4e8ac611ffdd9845eba0772a6ac8469fe", callback=self.responseHTML)
+		content = urllib2.urlopen("https://www.coinprism.info/tx/"+id).read()
+		parsed_html = BeautifulSoup(content,"lxml")
+		table_soup = parsed_html.body.find('table', attrs={'class':'table table-rounded '})
+		rows = table_soup.find_all("tr")
+		for row in rows:
+			cells = row.find_all("td")
+			txt = cells[0].get_text()
+			if txt== "Fee paid":
+				#get the transaction fee
+				print cells[1].get_text()
 
-	def responseHTML(self, response):
-		'''
-		The callback for requestHTML
-		'''
-		print response
-
-	requestHTML()
-
-	#txhasidlist = readTxhasid("trade_log_20160801_20161231.csv")
-
+lykkeSpider = LykkeSpider()
+txhasidlist = lykkeSpider.readTxhasid("trade_log_20160801_20161231.csv")
+for l in txhasidlist:
+	lykkeSpider.requestHTML(l)
