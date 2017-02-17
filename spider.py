@@ -29,8 +29,12 @@ SOFTWARE.
 import pandas as pd 
 from bs4 import BeautifulSoup
 import urllib2
+import csv 
+import datetime
 
 class LykkeSpider():
+
+	totalCount = 0
 
 	def readTxhasid(self, csv_path):
 		'''
@@ -39,12 +43,17 @@ class LykkeSpider():
 		print "reading txhasid from csv file ..."
 		df = pd.read_csv(csv_path)
 		txhasidColumn = df['TxHashId']
+		self.totalCount = df['TxHashId'].count()
+		print "There are total "+ str(self.totalCount) +" records ..."
 		return txhasidColumn.tolist()
 
 	def requestHTML(self, id):
 		'''
 		Crawl the fee information from Lykke
 		'''
+		self.totalCount -= 1
+		print str(self.totalCount) + " remaining ..."
+		a = datetime.datetime.now()
 		content = urllib2.urlopen("https://www.coinprism.info/tx/"+id).read()
 		parsed_html = BeautifulSoup(content,"lxml")
 		table_soup = parsed_html.body.find('table', attrs={'class':'table table-rounded '})
@@ -54,9 +63,23 @@ class LykkeSpider():
 			txt = cells[0].get_text()
 			if txt== "Fee paid":
 				#get the transaction fee
-				print cells[1].get_text()
+				#print cells[1].get_text()
+				b = datetime.datetime.now()
+				#print ((b-a).total_seconds())
+				sec_remaining = int(float(self.totalCount)*float((b-a).total_seconds()))
+				print(str(sec_remaining) + " seconds remaining ...")
+				return cells[1].get_text()
 
+result = []
+result.append(['TxHashId', 'Fee'])
 lykkeSpider = LykkeSpider()
 txhasidlist = lykkeSpider.readTxhasid("trade_log_20160801_20161231.csv")
 for l in txhasidlist:
-	lykkeSpider.requestHTML(l)
+	if l is not None:
+		fee = lykkeSpider.requestHTML(l)
+		fields = [l, fee]
+		result.append(fields)
+
+with open("fee.csv",'wb') as resultFile:
+    wr = csv.writer(resultFile, dialect='excel')
+    wr.writerows(result)
