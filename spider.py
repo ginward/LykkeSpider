@@ -31,6 +31,7 @@ from bs4 import BeautifulSoup
 import urllib2
 import csv 
 import datetime
+import math
 
 class LykkeSpider():
 
@@ -75,7 +76,7 @@ result.append(['TxHashId', 'Fee'])
 lykkeSpider = LykkeSpider()
 txhasidlist = lykkeSpider.readTxhasid("trade_log_20160801_20161231.csv")
 for l in txhasidlist:
-	if l is not None:
+	if l is not None and !math.isnan(l):
 		fee = lykkeSpider.requestHTML(l)
 		fields = [l, fee]
 		result.append(fields)
