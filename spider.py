@@ -31,7 +31,6 @@ from bs4 import BeautifulSoup
 import urllib2
 import csv 
 import datetime
-import math
 
 class LykkeSpider():
 
@@ -71,15 +70,23 @@ class LykkeSpider():
 				print(str(sec_remaining) + " seconds remaining ...")
 				return cells[1].get_text()
 
+def isNaN(num):
+	'''
+	Util to check if the numebr if nan
+	'''
+	return str(num) == str(1e400*0)
+
 result = []
 result.append(['TxHashId', 'Fee'])
 lykkeSpider = LykkeSpider()
 txhasidlist = lykkeSpider.readTxhasid("trade_log_20160801_20161231.csv")
 for l in txhasidlist:
-	if l is not None and !math.isnan(l):
+	if l is not None and isNaN(l) is False:
 		fee = lykkeSpider.requestHTML(l)
 		fields = [l, fee]
 		result.append(fields)
+	elif isNaN(l) is True:
+		print "skipping" + str(l)
 
 with open("fee.csv",'wb') as resultFile:
     wr = csv.writer(resultFile, dialect='excel')
